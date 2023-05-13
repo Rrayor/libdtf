@@ -1,8 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use libdtf::{
-    diff_types::{
-        ArrayDiff, ArrayDiffDesc, Config, KeyDiff, TypeDiff, ValueDiff, WorkingContext, WorkingFile,
-    },
+    diff_types::{Config, WorkingContext, WorkingFile},
     find_array_diffs, find_key_diffs, find_type_diffs, find_value_diffs,
 };
 use serde_json::json;
@@ -28,29 +26,6 @@ fn benchmark_find_key_diffs(c: &mut Criterion) {
             "both_have": "both_have"
         }
     });
-
-    let expected = vec![
-        KeyDiff::new(
-            "a_has".to_owned(),
-            FILE_NAME_A.to_owned(),
-            FILE_NAME_B.to_owned(),
-        ),
-        KeyDiff::new(
-            "nested.a_has".to_owned(),
-            FILE_NAME_A.to_owned(),
-            FILE_NAME_B.to_owned(),
-        ),
-        KeyDiff::new(
-            "b_has".to_owned(),
-            FILE_NAME_B.to_owned(),
-            FILE_NAME_A.to_owned(),
-        ),
-        KeyDiff::new(
-            "nested.b_has".to_owned(),
-            FILE_NAME_B.to_owned(),
-            FILE_NAME_A.to_owned(),
-        ),
-    ];
 
     let working_context = create_test_working_context(false);
 
@@ -118,19 +93,6 @@ fn benchmark_find_type_diffs_no_array_same_order(c: &mut Criterion) {
         }
     });
 
-    let expected = vec![
-        TypeDiff::new(
-            "a_string_b_int".to_owned(),
-            "string".to_owned(),
-            "number".to_owned(),
-        ),
-        TypeDiff::new(
-            "nested.a_bool_b_string".to_owned(),
-            "bool".to_owned(),
-            "string".to_owned(),
-        ),
-    ];
-
     let working_context = create_test_working_context(false);
 
     // act
@@ -196,29 +158,6 @@ fn benchmark_find_type_diffs_array_same_order(c: &mut Criterion) {
         ],
         }
     });
-
-    let expected = vec![
-        TypeDiff::new(
-            "a_string_b_int".to_owned(),
-            "string".to_owned(),
-            "number".to_owned(),
-        ),
-        TypeDiff::new(
-            "nested.a_bool_b_string".to_owned(),
-            "bool".to_owned(),
-            "string".to_owned(),
-        ),
-        TypeDiff::new(
-            "array_3_a_string_b_int[3]".to_owned(),
-            "string".to_owned(),
-            "number".to_owned(),
-        ),
-        TypeDiff::new(
-            "nested.array_3_a_int_b_bool[3]".to_owned(),
-            "number".to_owned(),
-            "bool".to_owned(),
-        ),
-    ];
 
     let working_context = create_test_working_context(true);
 
@@ -295,41 +234,6 @@ fn benchmark_find_value_diffs_no_array_same_order(c: &mut Criterion) {
         },
     });
 
-    let expected = vec![
-        ValueDiff::new("diff_string".to_owned(), "a".to_owned(), "b".to_owned()),
-        ValueDiff::new("diff_number".to_owned(), "1".to_owned(), "2".to_owned()),
-        ValueDiff::new(
-            "diff_boolean".to_owned(),
-            "true".to_owned(),
-            "false".to_owned(),
-        ),
-        ValueDiff::new(
-            "diff_array".to_owned(),
-            "[1,2,3,4]".to_owned(),
-            "[5,6,7,8]".to_owned(),
-        ),
-        ValueDiff::new(
-            "nested.diff_string".to_owned(),
-            "a".to_owned(),
-            "b".to_owned(),
-        ),
-        ValueDiff::new(
-            "nested.diff_number".to_owned(),
-            "1".to_owned(),
-            "2".to_owned(),
-        ),
-        ValueDiff::new(
-            "nested.diff_boolean".to_owned(),
-            "true".to_owned(),
-            "false".to_owned(),
-        ),
-        ValueDiff::new(
-            "nested.diff_array".to_owned(),
-            "[1,2,3,4]".to_owned(),
-            "[5,6,7,8]".to_owned(),
-        ),
-    ];
-
     let working_context = create_test_working_context(false);
 
     // act
@@ -405,37 +309,6 @@ fn benchmark_find_value_diffs_array_same_order(c: &mut Criterion) {
         },
     });
 
-    let expected = vec![
-        ValueDiff::new("diff_string".to_owned(), "a".to_owned(), "b".to_owned()),
-        ValueDiff::new("diff_number".to_owned(), "1".to_owned(), "2".to_owned()),
-        ValueDiff::new(
-            "diff_boolean".to_owned(),
-            "true".to_owned(),
-            "false".to_owned(),
-        ),
-        ValueDiff::new("diff_array[2]".to_owned(), "3".to_owned(), "8".to_owned()),
-        ValueDiff::new(
-            "nested.diff_string".to_owned(),
-            "a".to_owned(),
-            "b".to_owned(),
-        ),
-        ValueDiff::new(
-            "nested.diff_number".to_owned(),
-            "1".to_owned(),
-            "2".to_owned(),
-        ),
-        ValueDiff::new(
-            "nested.diff_boolean".to_owned(),
-            "true".to_owned(),
-            "false".to_owned(),
-        ),
-        ValueDiff::new(
-            "nested.diff_array[2]".to_owned(),
-            "3".to_owned(),
-            "8".to_owned(),
-        ),
-    ];
-
     let working_context = create_test_working_context(true);
 
     // act
@@ -486,41 +359,6 @@ fn benchmark_find_array_diffs(c: &mut Criterion) {
             ],
         },
     });
-
-    let expected = vec![
-        ArrayDiff::new("diff_array".to_owned(), ArrayDiffDesc::AHas, "3".to_owned()),
-        ArrayDiff::new(
-            "diff_array".to_owned(),
-            ArrayDiffDesc::BMisses,
-            "3".to_owned(),
-        ),
-        ArrayDiff::new("diff_array".to_owned(), ArrayDiffDesc::BHas, "8".to_owned()),
-        ArrayDiff::new(
-            "diff_array".to_owned(),
-            ArrayDiffDesc::AMisses,
-            "8".to_owned(),
-        ),
-        ArrayDiff::new(
-            "nested.diff_array".to_owned(),
-            ArrayDiffDesc::AHas,
-            "3".to_owned(),
-        ),
-        ArrayDiff::new(
-            "nested.diff_array".to_owned(),
-            ArrayDiffDesc::BMisses,
-            "3".to_owned(),
-        ),
-        ArrayDiff::new(
-            "nested.diff_array".to_owned(),
-            ArrayDiffDesc::BHas,
-            "8".to_owned(),
-        ),
-        ArrayDiff::new(
-            "nested.diff_array".to_owned(),
-            ArrayDiffDesc::AMisses,
-            "8".to_owned(),
-        ),
-    ];
 
     let working_context = create_test_working_context(false);
 
