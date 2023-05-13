@@ -10,6 +10,10 @@ use diff_types::{
     ArrayDiff, ArrayDiffDesc, KeyDiff, TypeDiff, ValueDiff, ValueType, WorkingContext,
 };
 
+/// Reads in a json file
+///
+/// # Errors
+/// Panics if the file cannot be opened.
 pub fn read_json_file(file_path: &str) -> Result<Map<String, Value>> {
     let file =
         File::open(file_path).unwrap_or_else(|_| panic!("Could not open file {}", file_path));
@@ -18,6 +22,7 @@ pub fn read_json_file(file_path: &str) -> Result<Map<String, Value>> {
     Ok(result)
 }
 
+/// Finds the keys that are present in one dataset but not the other.
 pub fn find_key_diffs(
     key_in: &str,
     a: &Map<String, Value>,
@@ -97,6 +102,7 @@ fn find_key_diffs_in_values(
     )
 }
 
+/// Finds the fields with the same keys, that have values of different types in the compared datasets.
 pub fn find_type_diffs(
     key_in: &str,
     a: &Map<String, Value>,
@@ -161,6 +167,7 @@ fn find_type_diffs_in_values(
     type_diff
 }
 
+/// Finds the fields with the same keys, that have different values in the compared datasets.
 pub fn find_value_diffs(
     key_in: &str,
     a: &Map<String, Value>,
@@ -223,6 +230,7 @@ fn find_value_diffs_in_values(
     value_diff
 }
 
+/// Finds differences in the content of arrays with the same keys in the compared datasets.
 pub fn find_array_diffs(
     key_in: &str,
     a: &Map<String, Value>,
