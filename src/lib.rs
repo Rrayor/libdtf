@@ -10,15 +10,21 @@ use diff_types::{
     ArrayDiff, ArrayDiffDesc, KeyDiff, TypeDiff, ValueDiff, ValueType, WorkingContext,
 };
 
+/// Reads in a json file
+///
+/// # Errors
+/// Panics if the file cannot be opened.
 pub fn read_json_file(file_path: &str) -> Result<Map<String, Value>> {
-    let file = File::open(file_path).expect(&format!("Could not open file {}", file_path));
+    let file =
+        File::open(file_path).unwrap_or_else(|_| panic!("Could not open file {}", file_path));
     let reader = BufReader::new(file);
     let result = serde_json::from_reader(reader)?;
     Ok(result)
 }
 
-pub fn find_key_diffs<'a>(
-    key_in: &'a str,
+/// Finds the keys that are present in one dataset but not the other.
+pub fn find_key_diffs(
+    key_in: &str,
     a: &Map<String, Value>,
     b: &Map<String, Value>,
     working_context: &WorkingContext,
@@ -27,11 +33,11 @@ pub fn find_key_diffs<'a>(
 
     let mut b_keys = HashSet::new();
     for b_key in b.keys() {
-        b_keys.insert(format_key(key_in, &b_key));
+        b_keys.insert(format_key(key_in, b_key));
     }
 
     for (a_key, a_value) in a.into_iter() {
-        let key = format_key(key_in, &a_key);
+        let key = format_key(key_in, a_key);
 
         if let Some(b_value) = b.get(a_key) {
             b_keys.remove(&key);
@@ -55,7 +61,7 @@ pub fn find_key_diffs<'a>(
         .into_iter()
         .map(|key| {
             KeyDiff::new(
-                key.to_owned(),
+                key,
                 working_context.file_b.name.to_owned(),
                 working_context.file_a.name.to_owned(),
             )
@@ -79,32 +85,26 @@ fn find_key_diffs_in_values(
         working_context,
         || {
             find_key_diffs(
-                &key_in,
+                key_in,
                 a.as_object().unwrap(),
                 b.as_object().unwrap(),
                 working_context,
             )
         },
-        || {
-            a.as_array()
-                .unwrap()
-                .into_iter()
-                .enumerate()
-                .flat_map(|(i, a_item)| {
-                    find_key_diffs_in_values(
-                        &format!("{}[{}]", key_in, i),
-                        a_item,
-                        &b.as_array().unwrap()[i],
-                        working_context,
-                    )
-                })
-                .collect()
+        |i, a_item| {
+            find_key_diffs_in_values(
+                &format!("{}[{}]", key_in, i),
+                a_item,
+                &b.as_array().unwrap()[i],
+                working_context,
+            )
         },
     )
 }
 
-pub fn find_type_diffs<'a>(
-    key_in: &'a str,
+/// Finds the fields with the same keys, that have values of different types in the compared datasets.
+pub fn find_type_diffs(
+    key_in: &str,
     a: &Map<String, Value>,
     b: &Map<String, Value>,
     working_context: &WorkingContext,
@@ -114,7 +114,7 @@ pub fn find_type_diffs<'a>(
     for (a_key, a_value) in a.into_iter() {
         if let Some(b_value) = b.get(a_key) {
             type_diff.append(&mut find_type_diffs_in_values(
-                &format_key(key_in, &a_key),
+                &format_key(key_in, a_key),
                 a_value,
                 b_value,
                 working_context,
@@ -137,26 +137,19 @@ fn find_type_diffs_in_values(
         working_context,
         || {
             find_type_diffs(
-                &key_in,
+                key_in,
                 a.as_object().unwrap(),
                 b.as_object().unwrap(),
                 working_context,
             )
         },
-        || {
-            a.as_array()
-                .unwrap()
-                .into_iter()
-                .enumerate()
-                .flat_map(|(i, a_item)| {
-                    find_type_diffs_in_values(
-                        &format!("{}[{}]", key_in, i),
-                        a_item,
-                        &b.as_array().unwrap()[i],
-                        working_context,
-                    )
-                })
-                .collect()
+        |i, a_item| {
+            find_type_diffs_in_values(
+                &format!("{}[{}]", key_in, i),
+                a_item,
+                &b.as_array().unwrap()[i],
+                working_context,
+            )
         },
     );
 
@@ -174,8 +167,9 @@ fn find_type_diffs_in_values(
     type_diff
 }
 
-pub fn find_value_diffs<'a>(
-    key_in: &'a str,
+/// Finds the fields with the same keys, that have different values in the compared datasets.
+pub fn find_value_diffs(
+    key_in: &str,
     a: &Map<String, Value>,
     b: &Map<String, Value>,
     working_context: &WorkingContext,
@@ -185,7 +179,7 @@ pub fn find_value_diffs<'a>(
     for (a_key, a_value) in a.into_iter() {
         if let Some(b_value) = b.get(a_key) {
             value_diff.append(&mut find_value_diffs_in_values(
-                &format_key(key_in, &a_key),
+                &format_key(key_in, a_key),
                 a_value,
                 b_value,
                 working_context,
@@ -196,16 +190,16 @@ pub fn find_value_diffs<'a>(
     value_diff
 }
 
-fn find_value_diffs_in_values<'a>(
-    key_in: &'a str,
-    a: &'a Value,
-    b: &'a Value,
+fn find_value_diffs_in_values(
+    key_in: &str,
+    a: &Value,
+    b: &Value,
     working_context: &WorkingContext,
 ) -> Vec<ValueDiff> {
     let mut value_diff = vec![];
     if a.is_object() && b.is_object() {
         value_diff.append(&mut find_value_diffs(
-            &key_in,
+            key_in,
             a.as_object().unwrap(),
             b.as_object().unwrap(),
             working_context,
@@ -215,11 +209,11 @@ fn find_value_diffs_in_values<'a>(
         && b.is_array()
         && a.as_array().unwrap().len() == b.as_array().unwrap().len()
     {
-        for (index, a_item) in a.as_array().unwrap().into_iter().enumerate() {
+        for (index, a_item) in a.as_array().unwrap().iter().enumerate() {
             let array_key = format!("{}[{}]", key_in, index);
             value_diff.append(&mut find_value_diffs_in_values(
                 &array_key,
-                &a_item,
+                a_item,
                 &b.as_array().unwrap()[index],
                 working_context,
             ));
@@ -236,8 +230,9 @@ fn find_value_diffs_in_values<'a>(
     value_diff
 }
 
-pub fn find_array_diffs<'a>(
-    key_in: &'a str,
+/// Finds differences in the content of arrays with the same keys in the compared datasets.
+pub fn find_array_diffs(
+    key_in: &str,
     a: &Map<String, Value>,
     b: &Map<String, Value>,
     working_context: &WorkingContext,
@@ -251,7 +246,7 @@ pub fn find_array_diffs<'a>(
     for (a_key, a_value) in a.into_iter() {
         if let Some(b_value) = b.get(a_key) {
             array_diff.append(&mut find_array_diffs_in_values(
-                &format_key(key_in, &a_key),
+                &format_key(key_in, a_key),
                 a_value,
                 b_value,
                 working_context,
@@ -274,18 +269,18 @@ fn find_array_diffs_in_values(
         working_context,
         || {
             find_array_diffs(
-                &key_in,
+                key_in,
                 a.as_object().unwrap(),
                 b.as_object().unwrap(),
                 working_context,
             )
         },
-        || vec![],
+        |_, _| Vec::new(),
     );
 
     if a.is_array() && b.is_array() {
         let (a_has, a_misses, b_has, b_misses) =
-            fill_diff_vectors(&a.as_array().unwrap(), b.as_array().unwrap());
+            fill_diff_vectors(a.as_array().unwrap(), b.as_array().unwrap());
 
         let array_diff_iter = a_has
             .iter()
@@ -332,7 +327,7 @@ fn find_diff_in_values<T, F, G>(
 ) -> Vec<T>
 where
     F: Fn() -> Vec<T>,
-    G: Fn() -> Vec<T>,
+    G: Fn(usize, &Value) -> Vec<T>,
 {
     let mut diffs: Vec<T> = vec![];
 
@@ -345,7 +340,15 @@ where
         && b.is_array()
         && a.as_array().unwrap().len() == b.as_array().unwrap().len()
     {
-        diffs.append(&mut run_if_arrays());
+        diffs.append(
+            &mut a
+                .as_array()
+                .unwrap()
+                .iter()
+                .enumerate()
+                .flat_map(|(i, a_item)| run_if_arrays(i, a_item))
+                .collect(),
+        );
     }
 
     diffs
