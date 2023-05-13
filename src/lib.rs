@@ -86,20 +86,13 @@ fn find_key_diffs_in_values(
                 working_context,
             )
         },
-        || {
-            a.as_array()
-                .unwrap()
-                .iter()
-                .enumerate()
-                .flat_map(|(i, a_item)| {
-                    find_key_diffs_in_values(
-                        &format!("{}[{}]", key_in, i),
-                        a_item,
-                        &b.as_array().unwrap()[i],
-                        working_context,
-                    )
-                })
-                .collect()
+        |i, a_item| {
+            find_key_diffs_in_values(
+                &format!("{}[{}]", key_in, i),
+                a_item,
+                &b.as_array().unwrap()[i],
+                working_context,
+            )
         },
     )
 }
@@ -144,20 +137,13 @@ fn find_type_diffs_in_values(
                 working_context,
             )
         },
-        || {
-            a.as_array()
-                .unwrap()
-                .iter()
-                .enumerate()
-                .flat_map(|(i, a_item)| {
-                    find_type_diffs_in_values(
-                        &format!("{}[{}]", key_in, i),
-                        a_item,
-                        &b.as_array().unwrap()[i],
-                        working_context,
-                    )
-                })
-                .collect()
+        |i, a_item| {
+            find_type_diffs_in_values(
+                &format!("{}[{}]", key_in, i),
+                a_item,
+                &b.as_array().unwrap()[i],
+                working_context,
+            )
         },
     );
 
@@ -281,7 +267,7 @@ fn find_array_diffs_in_values(
                 working_context,
             )
         },
-        Vec::new,
+        |_, _| Vec::new(),
     );
 
     if a.is_array() && b.is_array() {
@@ -333,7 +319,7 @@ fn find_diff_in_values<T, F, G>(
 ) -> Vec<T>
 where
     F: Fn() -> Vec<T>,
-    G: Fn() -> Vec<T>,
+    G: Fn(usize, &Value) -> Vec<T>,
 {
     let mut diffs: Vec<T> = vec![];
 
@@ -346,7 +332,15 @@ where
         && b.is_array()
         && a.as_array().unwrap().len() == b.as_array().unwrap().len()
     {
-        diffs.append(&mut run_if_arrays());
+        diffs.append(
+            &mut a
+                .as_array()
+                .unwrap()
+                .iter()
+                .enumerate()
+                .flat_map(|(i, a_item)| run_if_arrays(i, a_item))
+                .collect(),
+        );
     }
 
     diffs
