@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// Used for tracking the types of fields in the read-in data
@@ -30,7 +31,7 @@ impl fmt::Display for ValueType {
 /// We can describe this relation with 4 values:
 /// 1. AHas/BMisses
 /// 2. AMisses/BHas
-#[derive(PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub enum ArrayDiffDesc {
     AHas,
     AMisses,
@@ -39,6 +40,7 @@ pub enum ArrayDiffDesc {
 }
 
 /// Contains configuration options
+#[derive(Serialize, Deserialize)]
 pub struct Config {
     /// Used for switching between one-by-one value comparison for arrays or has/misses kind of comparison
     pub array_same_order: bool,
@@ -51,6 +53,7 @@ impl Config {
 }
 
 /// Contains data about the file we're currently working with
+#[derive(Serialize, Deserialize)]
 pub struct WorkingFile {
     pub name: String,
 }
@@ -62,6 +65,7 @@ impl WorkingFile {
 }
 
 /// Contains data of the current run
+#[derive(Serialize, Deserialize)]
 pub struct WorkingContext {
     pub file_a: WorkingFile,
     pub file_b: WorkingFile,
@@ -79,7 +83,7 @@ impl WorkingContext {
 }
 
 /// Stores differences in keys. Either a data-structure has a key present in the other or not.
-#[derive(PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct KeyDiff {
     pub key: String,
     pub has: String,
@@ -93,7 +97,7 @@ impl KeyDiff {
 }
 
 /// Stores differences in types. Used when a field with the same key has different types in the compared data.
-#[derive(PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct TypeDiff {
     pub key: String,
     pub type1: String,
@@ -107,7 +111,7 @@ impl TypeDiff {
 }
 
 /// Stores differences in values. Used when a field with the same key has different values in the compared data.
-#[derive(PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct ValueDiff {
     pub key: String,
     pub value1: String,
@@ -126,7 +130,7 @@ impl ValueDiff {
 
 /// Stores differences in array contents. Used when two arrays with the same keys have different content in the compared data.
 /// Only used when the user hasn't specified in the configs that the arrays should be in the same order.
-#[derive(PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct ArrayDiff {
     pub key: String,
     pub descriptor: ArrayDiffDesc,
