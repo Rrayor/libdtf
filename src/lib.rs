@@ -2,11 +2,11 @@ use serde_json::{Map, Result, Value};
 use std::fs::File;
 use std::io::BufReader;
 
-pub mod array_checker;
+mod array_checker;
 pub mod diff_types;
-pub mod key_checker;
-pub mod type_checker;
-pub mod value_checker;
+mod key_checker;
+mod type_checker;
+mod value_checker;
 
 /// Reads in a json file
 ///

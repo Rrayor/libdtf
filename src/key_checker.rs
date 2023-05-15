@@ -1,3 +1,14 @@
+/// Collects differences between the keys of 2 data sets.
+/// Stores `KeyDiff` values
+///
+/// 1. First we store all the keys in the `b` object into a set called `b_keys`
+/// 2. Then we go through all the fields of object `a`
+///     1. We construct a new key. If we have a key in our checker object, than we add the currently checked fields key to it after a '.'. That's how we handle the keys of nested objects.
+///     2. If the key is in `b_keys`, we remove it from there
+///         * If the field is an object, we recursively call the same comparison and go through the new object
+///         * If the field is an array and the user defined the option that arrays have to be in the same order we iterate through the array and recursively repeat the checking process for each item. If we can't assume, that the arrays are in the same order, than this check is pointless.
+///     3. If the key is not present in `b_keys`, we save it to the `diffs` vector
+/// 3. After checking `a` we add all the remaining keys in `b_keys` to the diff vector, if they weren't removed, they aren't in a.
 use std::collections::HashSet;
 
 use serde_json::Value;
@@ -12,10 +23,6 @@ impl<'a> Checker<KeyDiff> for CheckingData<'a, KeyDiff> {
         let mut b_keys = self.get_b_keys();
         self.check_a(&mut b_keys);
         self.check_b(&b_keys);
-    }
-
-    fn diffs(&self) -> &Vec<KeyDiff> {
-        &self.diffs
     }
 }
 

@@ -1,3 +1,11 @@
+/// Collects differences between the types of 2 data sets.
+/// Stores `TypeDiff` values
+///
+/// 1. We iterate through object `a` and if a field is present in `b` as well, only then do we take action
+///     1. We construct a new key. If we have a key in our checker object, than we add the currently checked fields key to it after a '.'. That's how we handle the keys of nested objects.
+///     2. If `a` and `b` are both objects we recursively start the process over for the nested objects.
+///     3. If both fields are arrays and the user has specified, that arrays should be in the same order, we iterate through the arrays and recursively repeat the checking for each item. If the user hasn't specified the option, this part is pointless.
+///     4. If the types of the fields don't match, we add the difference to our `diffs` vector.
 use serde_json::Value;
 
 use crate::{
@@ -12,10 +20,6 @@ impl<'a> Checker<TypeDiff> for CheckingData<'a, TypeDiff> {
                 self.find_type_diffs_in_values(&format_key(self.key, a_key), a_value, b_value);
             }
         }
-    }
-
-    fn diffs(&self) -> &Vec<TypeDiff> {
-        &self.diffs
     }
 }
 
@@ -171,7 +175,7 @@ mod tests {
         type_checker.check();
 
         // assert
-        assert_array(&expected, &type_checker.diffs());
+        assert_array(&expected, &type_checker.diffs);
     }
 
     #[test]
@@ -261,7 +265,7 @@ mod tests {
         type_checker.check();
 
         // assert
-        assert_array(&expected, &type_checker.diffs());
+        assert_array(&expected, &type_checker.diffs);
     }
 
     // Test utils

@@ -1,3 +1,14 @@
+/// Collects differences between the arrays of 2 data sets.
+/// Stores `ArrayDiff` values
+///
+/// 1. First we check if the user has specified the option that states, that arrays should be in the same order. If the option is turned on, we don't do anything. The array will be checked for value differences instead.
+/// 2. We iterate through object `a` and if a field is present in `b` as well, only then do we take action
+///     1. We construct a new key. If we have a key in our checker object, than we add the currently checked fields key to it after a '.'. That's how we handle the keys of nested objects.
+///     2. If `a` and `b` are both objects we recursively start the process over for the nested objects.
+///     3. If both fields are arrays, we collect the differences:
+///         * `AHas` and `BMisses` type of `ArrayDiffDesc` vectors, for values, that are present in `a` but not in `b`
+///         * `BHas` and `AMisses` type of `ArrayDiffDesc` vectors, for values, that are present in `b` but not in `a`
+///     4. We iterate through all the collected vectors and create `ArrayDiff` objects for each of them, which we store in our `diffs` vector
 use std::fmt::Display;
 
 use serde_json::Value;
@@ -9,19 +20,13 @@ use crate::{
 
 impl<'a> Checker<ArrayDiff> for CheckingData<'a, ArrayDiff> {
     fn check(&mut self) {
-        if self.working_context.config.array_same_order {
-            return;
-        }
-
-        for (a_key, a_value) in self.a.into_iter() {
-            if let Some(b_value) = self.b.get(a_key) {
-                self.find_array_diffs_in_values(&format_key(self.key, a_key), a_value, b_value);
+        if !self.working_context.config.array_same_order {
+            for (a_key, a_value) in self.a.into_iter() {
+                if let Some(b_value) = self.b.get(a_key) {
+                    self.find_array_diffs_in_values(&format_key(self.key, a_key), a_value, b_value);
+                }
             }
         }
-    }
-
-    fn diffs(&self) -> &Vec<ArrayDiff> {
-        &self.diffs
     }
 }
 
@@ -178,7 +183,7 @@ mod tests {
         array_checker.check();
 
         // assert
-        assert_array(&expected, &array_checker.diffs());
+        assert_array(&expected, &array_checker.diffs);
     }
 
     // Test utils
