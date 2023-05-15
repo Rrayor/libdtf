@@ -18,7 +18,7 @@ use crate::{
     format_key,
 };
 
-impl<'a> Checker<KeyDiff> for CheckingData<'a, KeyDiff> {
+impl<'a> Checker for CheckingData<'a, KeyDiff> {
     fn check(&mut self) {
         let mut b_keys = self.get_b_keys();
         self.check_a(&mut b_keys);
