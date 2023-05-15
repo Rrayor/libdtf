@@ -10,6 +10,100 @@ use diff_types::{
     ArrayDiff, ArrayDiffDesc, KeyDiff, TypeDiff, ValueDiff, ValueType, WorkingContext,
 };
 
+trait Checker {
+    fn check(
+        &mut self,
+        key_in: &str,
+        a: &Map<String, Value>,
+        b: &Map<String, Value>,
+        working_context: &WorkingContext,
+    );
+}
+
+pub struct KeyChecker {
+    pub diffs: Vec<KeyDiff>,
+}
+
+impl Checker for KeyChecker {
+    fn check(
+        &mut self,
+        key_in: &str,
+        a: &Map<String, Value>,
+        b: &Map<String, Value>,
+        working_context: &WorkingContext,
+    ) {
+        let mut b_keys = HashSet::new();
+        for b_key in b.keys() {
+            b_keys.insert(format_key(key_in, b_key));
+        }
+
+        for (a_key, a_value) in a.into_iter() {
+            let key = format_key(key_in, a_key);
+
+            if let Some(b_value) = b.get(a_key) {
+                b_keys.remove(&key);
+
+                self.diffs.append(&mut KeyChecker::find_key_diffs_in_values(
+                    &key,
+                    a_value,
+                    b_value,
+                    working_context,
+                ));
+            } else {
+                self.diffs.push(KeyDiff::new(
+                    key,
+                    working_context.file_a.name.clone(),
+                    working_context.file_b.name.clone(),
+                ));
+            }
+        }
+
+        let mut remainder = b_keys
+            .into_iter()
+            .map(|key| {
+                KeyDiff::new(
+                    key,
+                    working_context.file_b.name.to_owned(),
+                    working_context.file_a.name.to_owned(),
+                )
+            })
+            .collect();
+
+        self.diffs.append(&mut remainder);
+    }
+}
+
+impl KeyChecker {
+    fn find_key_diffs_in_values(
+        key_in: &str,
+        a: &Value,
+        b: &Value,
+        working_context: &WorkingContext,
+    ) -> Vec<KeyDiff> {
+        find_diff_in_values(
+            a,
+            b,
+            working_context,
+            || {
+                find_key_diffs(
+                    key_in,
+                    a.as_object().unwrap(),
+                    b.as_object().unwrap(),
+                    working_context,
+                )
+            },
+            |i, a_item| {
+                KeyChecker::find_key_diffs_in_values(
+                    &format!("{}[{}]", key_in, i),
+                    a_item,
+                    &b.as_array().unwrap()[i],
+                    working_context,
+                )
+            },
+        )
+    }
+}
+
 /// Reads in a json file
 ///
 /// # Errors
