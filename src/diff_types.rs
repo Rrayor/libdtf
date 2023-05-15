@@ -34,7 +34,7 @@ impl<'a, T> CheckingData<'a, T> {
 }
 
 /// Defines a type for all the checker modules to use
-pub trait Checker<T> {
+pub trait Checker {
     /// Should do all the difference checks and store the results in the diffs vector
     fn check(&mut self);
 }

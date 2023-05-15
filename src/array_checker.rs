@@ -18,7 +18,7 @@ use crate::{
     format_key,
 };
 
-impl<'a> Checker<ArrayDiff> for CheckingData<'a, ArrayDiff> {
+impl<'a> Checker for CheckingData<'a, ArrayDiff> {
     fn check(&mut self) {
         if !self.working_context.config.array_same_order {
             for (a_key, a_value) in self.a.into_iter() {

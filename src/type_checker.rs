@@ -13,7 +13,7 @@ use crate::{
     format_key,
 };
 
-impl<'a> Checker<TypeDiff> for CheckingData<'a, TypeDiff> {
+impl<'a> Checker for CheckingData<'a, TypeDiff> {
     fn check(&mut self) {
         for (a_key, a_value) in self.a.into_iter() {
             if let Some(b_value) = self.b.get(a_key) {
