@@ -1,5 +1,43 @@
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use std::fmt;
+
+/// Holds the data required to run a difference check
+pub struct CheckingData<'a, T> {
+    /// Holds the collected differences
+    pub diffs: Vec<T>,
+    /// Holds the key of the field currently checked - empty if it's the outermost object
+    pub key: &'a str,
+    /// One of the 2 objects that should be checked
+    pub a: &'a Map<String, Value>,
+    /// One of the 2 objects that should be checked
+    pub b: &'a Map<String, Value>,
+    /// Holds relevant data for the current run, such as file names, and user configs
+    pub working_context: &'a WorkingContext,
+}
+
+impl<'a, T> CheckingData<'a, T> {
+    pub fn new(
+        key: &'a str,
+        a: &'a Map<String, Value>,
+        b: &'a Map<String, Value>,
+        working_context: &'a WorkingContext,
+    ) -> CheckingData<'a, T> {
+        CheckingData {
+            diffs: vec![],
+            key,
+            a,
+            b,
+            working_context,
+        }
+    }
+}
+
+/// Defines a type for all the checker modules to use
+pub trait Checker<T> {
+    /// Should do all the difference checks and store the results in the diffs vector
+    fn check(&mut self);
+}
 
 /// Used for tracking the types of fields in the read-in data
 /// It has a Display implementation for ease-of-use in dependent applications
