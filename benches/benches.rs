@@ -1,7 +1,10 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use libdtf::{
-    diff_types::{Config, WorkingContext, WorkingFile},
-    find_array_diffs, find_key_diffs, find_type_diffs, find_value_diffs,
+    array_checker::ArrayChecker,
+    diff_types::{Checker, Config, WorkingContext, WorkingFile},
+    key_checker::KeyChecker,
+    type_checker::TypeChecker,
+    value_checker::ValueChecker,
 };
 use serde_json::json;
 
@@ -32,12 +35,13 @@ fn benchmark_find_key_diffs(c: &mut Criterion) {
     // act
     c.bench_function("Find Key Diffs", |bencher| {
         bencher.iter(|| {
-            let _ = find_key_diffs(
+            let mut key_checker = KeyChecker::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),
                 &working_context,
             );
+            key_checker.check();
         })
     });
 }
@@ -98,12 +102,13 @@ fn benchmark_find_type_diffs_no_array_same_order(c: &mut Criterion) {
     // act
     c.bench_function("Find Type Diffs No Array Same Order", |bencher| {
         bencher.iter(|| {
-            let _ = find_type_diffs(
+            let mut type_checker = TypeChecker::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),
                 &working_context,
             );
+            type_checker.check();
         })
     });
 }
@@ -164,12 +169,13 @@ fn benchmark_find_type_diffs_array_same_order(c: &mut Criterion) {
     // act
     c.bench_function("Find Type Diffs Array Same Order", |bencher| {
         bencher.iter(|| {
-            let _ = find_type_diffs(
+            let mut type_checker = TypeChecker::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),
                 &working_context,
             );
+            type_checker.check();
         })
     });
 }
@@ -239,12 +245,13 @@ fn benchmark_find_value_diffs_no_array_same_order(c: &mut Criterion) {
     // act
     c.bench_function("Find Value Diffs No Array Same Order", |bencher| {
         bencher.iter(|| {
-            let _ = find_value_diffs(
+            let mut value_checker = ValueChecker::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),
                 &working_context,
             );
+            value_checker.check();
         })
     });
 }
@@ -314,12 +321,13 @@ fn benchmark_find_value_diffs_array_same_order(c: &mut Criterion) {
     // act
     c.bench_function("Find Value Diffs Array Same Order", |bencher| {
         bencher.iter(|| {
-            let _ = find_value_diffs(
+            let mut value_checker = ValueChecker::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),
                 &working_context,
             );
+            value_checker.check();
         })
     });
 }
@@ -365,12 +373,13 @@ fn benchmark_find_array_diffs(c: &mut Criterion) {
     // act
     c.bench_function("Find Array Diffs", |bencher| {
         bencher.iter(|| {
-            let _ = find_array_diffs(
+            let mut array_checker = ArrayChecker::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),
                 &working_context,
             );
+            array_checker.check();
         })
     });
 }

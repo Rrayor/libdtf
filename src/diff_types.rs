@@ -1,6 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+pub trait Checker<T> {
+    fn check(&mut self);
+    fn diffs(&self) -> &Vec<T>;
+}
+
 /// Used for tracking the types of fields in the read-in data
 /// It has a Display implementation for ease-of-use in dependent applications
 #[derive(Debug, PartialEq, Clone, Copy)]
