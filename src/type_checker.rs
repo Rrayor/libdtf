@@ -1,19 +1,11 @@
-use serde_json::{Map, Value};
+use serde_json::Value;
 
 use crate::{
-    diff_types::{Checker, TypeDiff, ValueType, WorkingContext},
+    diff_types::{Checker, CheckingData, TypeDiff, ValueType},
     format_key,
 };
 
-pub struct TypeChecker<'a> {
-    diffs: Vec<TypeDiff>,
-    key: &'a str,
-    a: &'a Map<String, Value>,
-    b: &'a Map<String, Value>,
-    working_context: &'a WorkingContext,
-}
-
-impl<'a> Checker<TypeDiff> for TypeChecker<'a> {
+impl<'a> Checker<TypeDiff> for CheckingData<'a, TypeDiff> {
     fn check(&mut self) {
         for (a_key, a_value) in self.a.into_iter() {
             if let Some(b_value) = self.b.get(a_key) {
@@ -27,21 +19,7 @@ impl<'a> Checker<TypeDiff> for TypeChecker<'a> {
     }
 }
 
-impl<'a> TypeChecker<'a> {
-    pub fn new(
-        key: &'a str,
-        a: &'a Map<String, Value>,
-        b: &'a Map<String, Value>,
-        working_context: &'a WorkingContext,
-    ) -> TypeChecker<'a> {
-        TypeChecker {
-            diffs: vec![],
-            key,
-            a,
-            b,
-            working_context,
-        }
-    }
+impl<'a> CheckingData<'a, TypeDiff> {
     fn find_type_diffs_in_values(&mut self, key_in: &str, a: &Value, b: &Value) {
         if a.is_object() && b.is_object() {
             self.find_type_diffs_in_objects(key_in, a, b);
@@ -68,7 +46,7 @@ impl<'a> TypeChecker<'a> {
     }
 
     fn find_type_diffs_in_objects(&mut self, key_in: &str, a: &Value, b: &Value) {
-        let mut type_checker = TypeChecker::new(
+        let mut type_checker = CheckingData::new(
             key_in,
             a.as_object().unwrap(),
             b.as_object().unwrap(),
@@ -111,7 +89,7 @@ mod tests {
 
     use crate::diff_types::{Checker, Config, TypeDiff, WorkingContext, WorkingFile};
 
-    use super::TypeChecker;
+    use super::CheckingData;
 
     const FILE_NAME_A: &str = "a.json";
     const FILE_NAME_B: &str = "b.json";
@@ -182,7 +160,7 @@ mod tests {
         ];
 
         let working_context = create_test_working_context(false);
-        let mut type_checker = TypeChecker::new(
+        let mut type_checker = CheckingData::new(
             "",
             &a.as_object().unwrap(),
             &b.as_object().unwrap(),
@@ -272,7 +250,7 @@ mod tests {
         ];
 
         let working_context = create_test_working_context(true);
-        let mut type_checker = TypeChecker::new(
+        let mut type_checker = CheckingData::new(
             "",
             &a.as_object().unwrap(),
             &b.as_object().unwrap(),

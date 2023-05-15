@@ -1,10 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use libdtf::{
-    array_checker::ArrayChecker,
-    diff_types::{Checker, Config, WorkingContext, WorkingFile},
-    key_checker::KeyChecker,
-    type_checker::TypeChecker,
-    value_checker::ValueChecker,
+use libdtf::diff_types::{
+    ArrayDiff, Checker, CheckingData, Config, KeyDiff, TypeDiff, ValueDiff, WorkingContext,
+    WorkingFile,
 };
 use serde_json::json;
 
@@ -35,7 +32,7 @@ fn benchmark_find_key_diffs(c: &mut Criterion) {
     // act
     c.bench_function("Find Key Diffs", |bencher| {
         bencher.iter(|| {
-            let mut key_checker = KeyChecker::new(
+            let mut key_checker: CheckingData<KeyDiff> = CheckingData::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),
@@ -102,7 +99,7 @@ fn benchmark_find_type_diffs_no_array_same_order(c: &mut Criterion) {
     // act
     c.bench_function("Find Type Diffs No Array Same Order", |bencher| {
         bencher.iter(|| {
-            let mut type_checker = TypeChecker::new(
+            let mut type_checker: CheckingData<TypeDiff> = CheckingData::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),
@@ -169,7 +166,7 @@ fn benchmark_find_type_diffs_array_same_order(c: &mut Criterion) {
     // act
     c.bench_function("Find Type Diffs Array Same Order", |bencher| {
         bencher.iter(|| {
-            let mut type_checker = TypeChecker::new(
+            let mut type_checker: CheckingData<TypeDiff> = CheckingData::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),
@@ -245,7 +242,7 @@ fn benchmark_find_value_diffs_no_array_same_order(c: &mut Criterion) {
     // act
     c.bench_function("Find Value Diffs No Array Same Order", |bencher| {
         bencher.iter(|| {
-            let mut value_checker = ValueChecker::new(
+            let mut value_checker: CheckingData<ValueDiff> = CheckingData::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),
@@ -321,7 +318,7 @@ fn benchmark_find_value_diffs_array_same_order(c: &mut Criterion) {
     // act
     c.bench_function("Find Value Diffs Array Same Order", |bencher| {
         bencher.iter(|| {
-            let mut value_checker = ValueChecker::new(
+            let mut value_checker: CheckingData<ValueDiff> = CheckingData::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),
@@ -373,7 +370,7 @@ fn benchmark_find_array_diffs(c: &mut Criterion) {
     // act
     c.bench_function("Find Array Diffs", |bencher| {
         bencher.iter(|| {
-            let mut array_checker = ArrayChecker::new(
+            let mut array_checker: CheckingData<ArrayDiff> = CheckingData::new(
                 "",
                 &a.as_object().unwrap(),
                 &b.as_object().unwrap(),

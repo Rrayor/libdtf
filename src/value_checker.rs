@@ -1,19 +1,11 @@
-use serde_json::{Map, Value};
+use serde_json::Value;
 
 use crate::{
-    diff_types::{Checker, ValueDiff, WorkingContext},
+    diff_types::{Checker, CheckingData, ValueDiff},
     format_key,
 };
 
-pub struct ValueChecker<'a> {
-    diffs: Vec<ValueDiff>,
-    key: &'a str,
-    a: &'a Map<String, Value>,
-    b: &'a Map<String, Value>,
-    working_context: &'a WorkingContext,
-}
-
-impl<'a> Checker<ValueDiff> for ValueChecker<'a> {
+impl<'a> Checker<ValueDiff> for CheckingData<'a, ValueDiff> {
     fn check(&mut self) {
         for (a_key, a_value) in self.a.into_iter() {
             if let Some(b_value) = self.b.get(a_key) {
@@ -27,22 +19,7 @@ impl<'a> Checker<ValueDiff> for ValueChecker<'a> {
     }
 }
 
-impl<'a> ValueChecker<'a> {
-    pub fn new(
-        key: &'a str,
-        a: &'a Map<String, Value>,
-        b: &'a Map<String, Value>,
-        working_context: &'a WorkingContext,
-    ) -> ValueChecker<'a> {
-        ValueChecker {
-            diffs: vec![],
-            key,
-            a,
-            b,
-            working_context,
-        }
-    }
-
+impl<'a> CheckingData<'a, ValueDiff> {
     fn find_value_diffs_in_values(&mut self, key_in: &str, a: &Value, b: &Value) {
         if a.is_object() && b.is_object() {
             self.find_value_diffs_in_objects(key_in, a, b);
@@ -63,7 +40,7 @@ impl<'a> ValueChecker<'a> {
     }
 
     fn find_value_diffs_in_objects(&mut self, key_in: &str, a: &Value, b: &Value) {
-        let mut value_checker = ValueChecker::new(
+        let mut value_checker = CheckingData::new(
             key_in,
             a.as_object().unwrap(),
             b.as_object().unwrap(),
@@ -88,7 +65,7 @@ mod tests {
 
     use crate::diff_types::{Checker, Config, ValueDiff, WorkingContext, WorkingFile};
 
-    use super::ValueChecker;
+    use super::CheckingData;
 
     const FILE_NAME_A: &str = "a.json";
     const FILE_NAME_B: &str = "b.json";
@@ -190,7 +167,7 @@ mod tests {
         ];
 
         let working_context = create_test_working_context(false);
-        let mut value_checker = ValueChecker::new(
+        let mut value_checker = CheckingData::new(
             "",
             &a.as_object().unwrap(),
             &b.as_object().unwrap(),
@@ -297,7 +274,7 @@ mod tests {
         ];
 
         let working_context = create_test_working_context(true);
-        let mut value_checker = ValueChecker::new(
+        let mut value_checker = CheckingData::new(
             "",
             &a.as_object().unwrap(),
             &b.as_object().unwrap(),

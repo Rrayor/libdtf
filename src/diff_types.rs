@@ -1,5 +1,31 @@
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use std::fmt;
+
+pub struct CheckingData<'a, T> {
+    pub diffs: Vec<T>,
+    pub key: &'a str,
+    pub a: &'a Map<String, Value>,
+    pub b: &'a Map<String, Value>,
+    pub working_context: &'a WorkingContext,
+}
+
+impl<'a, T> CheckingData<'a, T> {
+    pub fn new(
+        key: &'a str,
+        a: &'a Map<String, Value>,
+        b: &'a Map<String, Value>,
+        working_context: &'a WorkingContext,
+    ) -> CheckingData<'a, T> {
+        CheckingData {
+            diffs: vec![],
+            key,
+            a,
+            b,
+            working_context,
+        }
+    }
+}
 
 pub trait Checker<T> {
     fn check(&mut self);

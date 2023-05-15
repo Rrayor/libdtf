@@ -1,21 +1,13 @@
 use std::fmt::Display;
 
-use serde_json::{Map, Value};
+use serde_json::Value;
 
 use crate::{
-    diff_types::{ArrayDiff, ArrayDiffDesc, Checker, WorkingContext},
+    diff_types::{ArrayDiff, ArrayDiffDesc, Checker, CheckingData},
     format_key,
 };
 
-pub struct ArrayChecker<'a> {
-    diffs: Vec<ArrayDiff>,
-    key: &'a str,
-    a: &'a Map<String, Value>,
-    b: &'a Map<String, Value>,
-    working_context: &'a WorkingContext,
-}
-
-impl<'a> Checker<ArrayDiff> for ArrayChecker<'a> {
+impl<'a> Checker<ArrayDiff> for CheckingData<'a, ArrayDiff> {
     fn check(&mut self) {
         if self.working_context.config.array_same_order {
             return;
@@ -33,22 +25,7 @@ impl<'a> Checker<ArrayDiff> for ArrayChecker<'a> {
     }
 }
 
-impl<'a> ArrayChecker<'a> {
-    pub fn new(
-        key: &'a str,
-        a: &'a Map<String, Value>,
-        b: &'a Map<String, Value>,
-        working_context: &'a WorkingContext,
-    ) -> ArrayChecker<'a> {
-        ArrayChecker {
-            diffs: vec![],
-            key,
-            a,
-            b,
-            working_context,
-        }
-    }
-
+impl<'a> CheckingData<'a, ArrayDiff> {
     fn find_array_diffs_in_values(&mut self, key_in: &str, a: &Value, b: &Value) {
         if a.is_object() && b.is_object() {
             self.find_array_diffs_in_objects(key_in, a, b);
@@ -92,7 +69,7 @@ impl<'a> ArrayChecker<'a> {
     }
 
     fn find_array_diffs_in_objects(&mut self, key_in: &str, a: &Value, b: &Value) {
-        let mut array_checker = ArrayChecker::new(
+        let mut array_checker = CheckingData::new(
             key_in,
             a.as_object().unwrap(),
             b.as_object().unwrap(),
@@ -112,7 +89,7 @@ mod tests {
         ArrayDiff, ArrayDiffDesc, Checker, Config, WorkingContext, WorkingFile,
     };
 
-    use super::ArrayChecker;
+    use super::CheckingData;
 
     const FILE_NAME_A: &str = "a.json";
     const FILE_NAME_B: &str = "b.json";
@@ -190,7 +167,7 @@ mod tests {
         ];
 
         let working_context = create_test_working_context(false);
-        let mut array_checker = ArrayChecker::new(
+        let mut array_checker = CheckingData::new(
             "",
             &a.as_object().unwrap(),
             &b.as_object().unwrap(),

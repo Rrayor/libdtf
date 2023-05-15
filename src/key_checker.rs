@@ -1,21 +1,13 @@
 use std::collections::HashSet;
 
-use serde_json::{Map, Value};
+use serde_json::Value;
 
 use crate::{
-    diff_types::{Checker, KeyDiff, WorkingContext},
+    diff_types::{Checker, CheckingData, KeyDiff},
     format_key,
 };
 
-pub struct KeyChecker<'a> {
-    diffs: Vec<KeyDiff>,
-    key: &'a str,
-    a: &'a Map<String, Value>,
-    b: &'a Map<String, Value>,
-    working_context: &'a WorkingContext,
-}
-
-impl<'a> Checker<KeyDiff> for KeyChecker<'a> {
+impl<'a> Checker<KeyDiff> for CheckingData<'a, KeyDiff> {
     fn check(&mut self) {
         let mut b_keys = self.get_b_keys();
         self.check_a(&mut b_keys);
@@ -27,22 +19,7 @@ impl<'a> Checker<KeyDiff> for KeyChecker<'a> {
     }
 }
 
-impl<'a> KeyChecker<'a> {
-    pub fn new(
-        key: &'a str,
-        a: &'a Map<String, Value>,
-        b: &'a Map<String, Value>,
-        working_context: &'a WorkingContext,
-    ) -> KeyChecker<'a> {
-        KeyChecker {
-            diffs: vec![],
-            key,
-            a,
-            b,
-            working_context,
-        }
-    }
-
+impl<'a> CheckingData<'a, KeyDiff> {
     fn find_key_diffs_in_values(&mut self, key_in: &str, a: &Value, b: &Value) {
         if a.is_object() && b.is_object() {
             self.find_key_diffs_in_objects(key_in, a, b);
@@ -58,7 +35,7 @@ impl<'a> KeyChecker<'a> {
     }
 
     fn find_key_diffs_in_objects(&mut self, key_in: &str, a: &Value, b: &Value) {
-        let mut key_checker = KeyChecker::new(
+        let mut key_checker = CheckingData::new(
             key_in,
             a.as_object().unwrap(),
             b.as_object().unwrap(),
@@ -127,9 +104,7 @@ impl<'a> KeyChecker<'a> {
 mod tests {
     use serde_json::json;
 
-    use crate::diff_types::{Checker, Config, KeyDiff, WorkingContext, WorkingFile};
-
-    use super::KeyChecker;
+    use crate::diff_types::{Checker, CheckingData, Config, KeyDiff, WorkingContext, WorkingFile};
 
     const FILE_NAME_A: &str = "a.json";
     const FILE_NAME_B: &str = "b.json";
@@ -179,7 +154,7 @@ mod tests {
 
         let working_context = create_test_working_context(false);
 
-        let mut key_checker = KeyChecker::new(
+        let mut key_checker = CheckingData::new(
             "",
             &a.as_object().unwrap(),
             &b.as_object().unwrap(),
