@@ -14,15 +14,24 @@ use std::collections::HashSet;
 use serde_json::Value;
 
 use crate::{
-    diff_types::{Checker, CheckingData, KeyDiff},
+    diff_types::{Checker, CheckingData, DiffCollection, KeyDiff},
     format_key,
 };
 
-impl<'a> Checker for CheckingData<'a, KeyDiff> {
+impl<'a> Checker<KeyDiff> for CheckingData<'a, KeyDiff> {
     fn check(&mut self) {
         let mut b_keys = self.get_b_keys();
         self.check_a(&mut b_keys);
         self.check_b(&b_keys);
+    }
+
+    fn check_and_get(&mut self) -> &DiffCollection<KeyDiff> {
+        self.check();
+        &self.diffs
+    }
+
+    fn diffs(&self) -> &Vec<KeyDiff> {
+        self.diffs.diffs()
     }
 }
 
@@ -50,7 +59,7 @@ impl<'a> CheckingData<'a, KeyDiff> {
         );
 
         key_checker.check();
-        self.diffs.append(&mut key_checker.diffs);
+        self.diffs.concatenate(&mut key_checker.diffs);
     }
 
     fn find_key_diffs_in_arrays(&mut self, key_in: &str, a: &Value, b: &Value) {
@@ -172,7 +181,7 @@ mod tests {
         key_checker.check();
 
         // assert
-        assert_array(&expected, &key_checker.diffs);
+        assert_array(&expected, key_checker.diffs());
     }
 
     // Test utils

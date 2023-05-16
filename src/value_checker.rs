@@ -9,17 +9,26 @@
 use serde_json::Value;
 
 use crate::{
-    diff_types::{Checker, CheckingData, ValueDiff},
+    diff_types::{Checker, CheckingData, DiffCollection, ValueDiff},
     format_key,
 };
 
-impl<'a> Checker for CheckingData<'a, ValueDiff> {
+impl<'a> Checker<ValueDiff> for CheckingData<'a, ValueDiff> {
     fn check(&mut self) {
         for (a_key, a_value) in self.a.into_iter() {
             if let Some(b_value) = self.b.get(a_key) {
                 self.find_value_diffs_in_values(&format_key(self.key, a_key), a_value, b_value);
             }
         }
+    }
+
+    fn check_and_get(&mut self) -> &DiffCollection<ValueDiff> {
+        self.check();
+        &self.diffs
+    }
+
+    fn diffs(&self) -> &Vec<ValueDiff> {
+        self.diffs.diffs()
     }
 }
 
@@ -52,7 +61,7 @@ impl<'a> CheckingData<'a, ValueDiff> {
         );
 
         value_checker.check();
-        self.diffs.append(&mut value_checker.diffs);
+        self.diffs.concatenate(&mut value_checker.diffs);
     }
 
     fn find_value_diffs_in_arrays(&mut self, key_in: &str, a: &Value, b: &Value) {
@@ -182,7 +191,7 @@ mod tests {
         value_checker.check();
 
         // assert
-        assert_array(&expected, &value_checker.diffs);
+        assert_array(&expected, value_checker.diffs());
     }
 
     #[test]
@@ -289,7 +298,7 @@ mod tests {
         value_checker.check();
 
         // assert
-        assert_array(&expected, &value_checker.diffs);
+        assert_array(&expected, value_checker.diffs());
     }
 
     // Test utils

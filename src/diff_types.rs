@@ -3,9 +3,9 @@ use serde_json::{Map, Value};
 use std::fmt;
 
 /// Holds the data required to run a difference check
-pub struct CheckingData<'a, T> {
+pub struct CheckingData<'a, T: Diff> {
     /// Holds the collected differences
-    pub diffs: Vec<T>,
+    pub diffs: DiffCollection<T>,
     /// Holds the key of the field currently checked - empty if it's the outermost object
     pub key: &'a str,
     /// One of the 2 objects that should be checked
@@ -16,15 +16,16 @@ pub struct CheckingData<'a, T> {
     pub working_context: &'a WorkingContext,
 }
 
-impl<'a, T> CheckingData<'a, T> {
+impl<'a, T: Diff> CheckingData<'a, T> {
     pub fn new(
         key: &'a str,
         a: &'a Map<String, Value>,
         b: &'a Map<String, Value>,
         working_context: &'a WorkingContext,
     ) -> CheckingData<'a, T> {
+        let diff_collection: DiffCollection<T> = DiffCollection::new();
         CheckingData {
-            diffs: vec![],
+            diffs: diff_collection,
             key,
             a,
             b,
@@ -34,10 +35,19 @@ impl<'a, T> CheckingData<'a, T> {
 }
 
 /// Defines a type for all the checker modules to use
-pub trait Checker {
-    /// Should do all the difference checks and store the results in the diffs vector
+pub trait Checker<T: Diff> {
+    /// Does all the difference checks and store the results in the diffs vector
     fn check(&mut self);
+
+    /// Does the difference checks, stores it in the object, but also returns it
+    fn check_and_get(&mut self) -> &DiffCollection<T>;
+
+    /// Returns the stored diffs
+    fn diffs(&self) -> &Vec<T>;
 }
+
+/// Tag trait for the difference types
+pub trait Diff {}
 
 /// Used for tracking the types of fields in the read-in data
 /// It has a Display implementation for ease-of-use in dependent applications
@@ -62,6 +72,43 @@ impl fmt::Display for ValueType {
             ValueType::Object => "object",
         };
         write!(f, "{}", value_type_str)
+    }
+}
+
+/// Holds diffs
+pub struct DiffCollection<T: Diff> {
+    diffs: Vec<T>,
+}
+
+impl<T: Diff> Default for DiffCollection<T> {
+    fn default() -> Self {
+        DiffCollection::new()
+    }
+}
+
+impl<T: Diff> DiffCollection<T> {
+    pub fn new() -> DiffCollection<T> {
+        DiffCollection { diffs: vec![] }
+    }
+
+    pub fn diffs(&self) -> &Vec<T> {
+        &self.diffs
+    }
+
+    pub fn concatenate(&mut self, diffs: &mut DiffCollection<T>) {
+        self.diffs.append(&mut diffs.diffs);
+    }
+
+    pub fn extend<I: IntoIterator<Item = T>>(&mut self, diffs: I) {
+        self.diffs.extend(diffs);
+    }
+
+    pub fn append(&mut self, diffs: &mut Vec<T>) {
+        self.diffs.append(diffs);
+    }
+
+    pub fn push(&mut self, diff: T) {
+        self.diffs.push(diff);
     }
 }
 
@@ -134,6 +181,8 @@ impl KeyDiff {
     }
 }
 
+impl Diff for KeyDiff {}
+
 /// Stores differences in types. Used when a field with the same key has different types in the compared data.
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct TypeDiff {
@@ -147,6 +196,8 @@ impl TypeDiff {
         TypeDiff { key, type1, type2 }
     }
 }
+
+impl Diff for TypeDiff {}
 
 /// Stores differences in values. Used when a field with the same key has different values in the compared data.
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
@@ -166,6 +217,8 @@ impl ValueDiff {
     }
 }
 
+impl Diff for ValueDiff {}
+
 /// Stores differences in array contents. Used when two arrays with the same keys have different content in the compared data.
 /// Only used when the user hasn't specified in the configs that the arrays should be in the same order.
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
@@ -184,5 +237,7 @@ impl ArrayDiff {
         }
     }
 }
+
+impl Diff for ArrayDiff {}
 
 pub type ComparisionResult = (Vec<KeyDiff>, Vec<TypeDiff>, Vec<ValueDiff>, Vec<ArrayDiff>);
