@@ -5,7 +5,7 @@ use std::fmt;
 /// Holds the data required to run a difference check
 pub struct CheckingData<'a, T: Diff> {
     /// Holds the collected differences
-    pub diffs: &'a DiffCollection<T>,
+    pub diffs: DiffCollection<T>,
     /// Holds the key of the field currently checked - empty if it's the outermost object
     pub key: &'a str,
     /// One of the 2 objects that should be checked
@@ -25,7 +25,7 @@ impl<'a, T: Diff> CheckingData<'a, T> {
     ) -> CheckingData<'a, T> {
         let diff_collection: DiffCollection<T> = DiffCollection::new();
         CheckingData {
-            diffs: &diff_collection,
+            diffs: diff_collection,
             key,
             a,
             b,
@@ -80,6 +80,12 @@ pub struct DiffCollection<T: Diff> {
     diffs: Vec<T>,
 }
 
+impl<T: Diff> Default for DiffCollection<T> {
+    fn default() -> Self {
+        DiffCollection::new()
+    }
+}
+
 impl<T: Diff> DiffCollection<T> {
     pub fn new() -> DiffCollection<T> {
         DiffCollection { diffs: vec![] }
@@ -89,11 +95,11 @@ impl<T: Diff> DiffCollection<T> {
         &self.diffs
     }
 
-    pub fn concatenate(&mut self, diffs: &DiffCollection<T>) {
+    pub fn concatenate(&mut self, diffs: &mut DiffCollection<T>) {
         self.diffs.append(&mut diffs.diffs);
     }
 
-    pub fn extend<I: IntoIterator<Item = T>>(&self, diffs: I) {
+    pub fn extend<I: IntoIterator<Item = T>>(&mut self, diffs: I) {
         self.diffs.extend(diffs);
     }
 
