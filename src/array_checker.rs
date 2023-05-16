@@ -14,11 +14,11 @@ use std::fmt::Display;
 use serde_json::Value;
 
 use crate::{
-    diff_types::{ArrayDiff, ArrayDiffDesc, Checker, CheckingData},
+    diff_types::{ArrayDiff, ArrayDiffDesc, Checker, CheckingData, DiffCollection},
     format_key,
 };
 
-impl<'a> Checker for CheckingData<'a, ArrayDiff> {
+impl<'a> Checker<ArrayDiff> for CheckingData<'a, ArrayDiff> {
     fn check(&mut self) {
         if !self.working_context.config.array_same_order {
             for (a_key, a_value) in self.a.into_iter() {
@@ -27,6 +27,15 @@ impl<'a> Checker for CheckingData<'a, ArrayDiff> {
                 }
             }
         }
+    }
+
+    fn check_and_get(&mut self) -> &DiffCollection<ArrayDiff> {
+        self.check();
+        &self.diffs
+    }
+
+    fn diffs(&self) -> &Vec<ArrayDiff> {
+        self.diffs.diffs()
     }
 }
 
@@ -82,7 +91,7 @@ impl<'a> CheckingData<'a, ArrayDiff> {
         );
 
         array_checker.check();
-        self.diffs.append(&mut array_checker.diffs);
+        self.diffs.concatenate(&mut array_checker.diffs);
     }
 }
 
@@ -183,7 +192,7 @@ mod tests {
         array_checker.check();
 
         // assert
-        assert_array(&expected, &array_checker.diffs);
+        assert_array(&expected, array_checker.diffs());
     }
 
     // Test utils
