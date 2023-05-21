@@ -116,7 +116,7 @@ impl<T: Diff> DiffCollection<T> {
 /// We can describe this relation with 4 values:
 /// 1. AHas/BMisses
 /// 2. AMisses/BHas
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Debug, Clone, Copy)]
 pub enum ArrayDiffDesc {
     AHas,
     AMisses,
