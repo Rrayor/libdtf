@@ -42,13 +42,19 @@ impl<'a> CheckingData<'a, ValueDiff> {
             && a.as_array().unwrap().len() == b.as_array().unwrap().len()
         {
             self.find_value_diffs_in_arrays(key_in, a, b);
-        } else if a != b {
+        } else if a != b && !a.is_array() && !b.is_array() {
             self.diffs.push(ValueDiff::new(
                 key_in.to_owned(),
                 // String values are escaped by default if to_string() is called on them, so if it is a string, we call as_str() first.
                 a.as_str().map_or_else(|| a.to_string(), |v| v.to_owned()),
                 b.as_str().map_or_else(|| b.to_string(), |v| v.to_owned()),
             ));
+        } else if a != b && a.is_array() && b.is_array() {
+            self.diffs.push(ValueDiff::new(
+                key_in.to_owned(),
+                "Array differences present".to_owned(),
+                "Array differences present".to_owned(),
+            ))
         }
     }
 
@@ -154,8 +160,8 @@ mod tests {
             ),
             ValueDiff::new(
                 "diff_array".to_owned(),
-                "[1,2,3,4]".to_owned(),
-                "[5,6,7,8]".to_owned(),
+                "Array differences present".to_owned(),
+                "Array differences present".to_owned(),
             ),
             ValueDiff::new(
                 "nested.diff_string".to_owned(),
@@ -174,8 +180,8 @@ mod tests {
             ),
             ValueDiff::new(
                 "nested.diff_array".to_owned(),
-                "[1,2,3,4]".to_owned(),
-                "[5,6,7,8]".to_owned(),
+                "Array differences present".to_owned(),
+                "Array differences present".to_owned(),
             ),
         ];
 
