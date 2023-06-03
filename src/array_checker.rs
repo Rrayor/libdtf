@@ -9,9 +9,9 @@
 ///         * `AHas` and `BMisses` type of `ArrayDiffDesc` vectors, for values, that are present in `a` but not in `b`
 ///         * `BHas` and `AMisses` type of `ArrayDiffDesc` vectors, for values, that are present in `b` but not in `a`
 ///     4. We iterate through all the collected vectors and create `ArrayDiff` objects for each of them, which we store in our `diffs` vector
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::{
     diff_types::{ArrayDiff, ArrayDiffDesc, Checker, CheckingData, DiffCollection},
@@ -47,7 +47,7 @@ impl<'a> CheckingData<'a, ArrayDiff> {
 
         if a.is_array() && b.is_array() {
             let (a_has, a_misses, b_has, b_misses) =
-                self.fill_diff_vectors(a.as_array().unwrap(), b.as_array().unwrap());
+                self.count_occurrences(a.as_array().unwrap(), b.as_array().unwrap());
 
             let array_diff_iter = a_has
                 .iter()
@@ -69,17 +69,50 @@ impl<'a> CheckingData<'a, ArrayDiff> {
         }
     }
 
-    fn fill_diff_vectors<T: PartialEq + Display>(
-        &self,
-        a: &'a [T],
-        b: &'a [T],
-    ) -> (Vec<&'a T>, Vec<&'a T>, Vec<&'a T>, Vec<&'a T>) {
-        let a_has = a.iter().filter(|&x| !b.contains(x)).collect::<Vec<&T>>();
-        let b_has = b.iter().filter(|&x| !a.contains(x)).collect::<Vec<&T>>();
-        let a_misses = b.iter().filter(|&x| !a.contains(x)).collect::<Vec<&T>>();
-        let b_misses = a.iter().filter(|&x| !b.contains(x)).collect::<Vec<&T>>();
+    fn count_occurrences<T: PartialEq + Display>(
+        &mut self,
+        a: &[T],
+        b: &[T],
+    ) -> (Vec<Value>, Vec<Value>, Vec<Value>, Vec<Value>) {
+        let ocurrence_counts_a = self.count_items(a);
+        let ocurrence_counts_b = self.count_items(b);
+
+        let a_has = self.calculate_difference(&ocurrence_counts_a, &ocurrence_counts_b);
+        let b_has = self.calculate_difference(&ocurrence_counts_b, &ocurrence_counts_a);
+
+        let a_misses = b_has.clone();
+        let b_misses = a_has.clone();
 
         (a_has, a_misses, b_has, b_misses)
+    }
+
+    fn count_items<T: PartialEq + Display>(&self, items: &[T]) -> HashMap<String, i32> {
+        let mut occurrence_counts = HashMap::new();
+
+        for item in items {
+            *occurrence_counts.entry(item.to_string()).or_insert(0) += 1;
+        }
+
+        occurrence_counts
+    }
+
+    fn calculate_difference(
+        &self,
+        ocurrence_counts_a: &HashMap<String, i32>,
+        ocurrence_counts_b: &HashMap<String, i32>,
+    ) -> Vec<Value> {
+        let mut difference = vec![];
+
+        for (key, count) in ocurrence_counts_a.iter() {
+            let count_b = ocurrence_counts_b.get(key).copied().unwrap_or(0);
+            let diff = count - count_b;
+
+            for _ in 0..diff {
+                difference.push(json!(key));
+            }
+        }
+
+        difference
     }
 
     fn find_array_diffs_in_objects(&mut self, key_in: &str, a: &Value, b: &Value) {
@@ -177,6 +210,109 @@ mod tests {
                 "nested.diff_array".to_owned(),
                 ArrayDiffDesc::AMisses,
                 "8".to_owned(),
+            ),
+        ];
+
+        let working_context = create_test_working_context(false);
+        let mut array_checker = CheckingData::new(
+            "",
+            &a.as_object().unwrap(),
+            &b.as_object().unwrap(),
+            &working_context,
+        );
+
+        // act
+        array_checker.check();
+
+        // assert
+        assert_array(&expected, array_checker.diffs());
+    }
+
+    #[test]
+    fn test_find_array_diffs_multiple_entries_with_same_value() {
+        // arrange
+        let a = json!({
+            "no_diff_array": [
+                1, 2, 3, 4,
+            ],
+            "diff_array": [
+                1, 2, 3, 4
+            ],
+            "nested": {
+                "no_diff_array": [
+                    1, 2, 3, 4
+                ],
+                "diff_array": [
+                    1, 2, 3, 4
+                ],
+            },
+        });
+
+        let b = json!({
+            "no_diff_array": [
+                1, 2, 3, 4
+            ],
+            "diff_array": [
+                1, 1, 2, 3, 3, 3, 4,
+            ],
+            "nested": {
+                "no_diff_array": [
+                    1, 2, 3, 4
+                ],
+                "diff_array": [
+                    1, 1, 2, 3, 3, 3, 4,
+                ],
+            },
+        });
+
+        let expected = vec![
+            ArrayDiff::new("diff_array".to_owned(), ArrayDiffDesc::BHas, "1".to_owned()),
+            ArrayDiff::new("diff_array".to_owned(), ArrayDiffDesc::BHas, "3".to_owned()),
+            ArrayDiff::new("diff_array".to_owned(), ArrayDiffDesc::BHas, "3".to_owned()),
+            ArrayDiff::new(
+                "diff_array".to_owned(),
+                ArrayDiffDesc::AMisses,
+                "1".to_owned(),
+            ),
+            ArrayDiff::new(
+                "diff_array".to_owned(),
+                ArrayDiffDesc::AMisses,
+                "3".to_owned(),
+            ),
+            ArrayDiff::new(
+                "diff_array".to_owned(),
+                ArrayDiffDesc::AMisses,
+                "3".to_owned(),
+            ),
+            ArrayDiff::new(
+                "nested.diff_array".to_owned(),
+                ArrayDiffDesc::BHas,
+                "1".to_owned(),
+            ),
+            ArrayDiff::new(
+                "nested.diff_array".to_owned(),
+                ArrayDiffDesc::BHas,
+                "3".to_owned(),
+            ),
+            ArrayDiff::new(
+                "nested.diff_array".to_owned(),
+                ArrayDiffDesc::BHas,
+                "3".to_owned(),
+            ),
+            ArrayDiff::new(
+                "nested.diff_array".to_owned(),
+                ArrayDiffDesc::AMisses,
+                "1".to_owned(),
+            ),
+            ArrayDiff::new(
+                "nested.diff_array".to_owned(),
+                ArrayDiffDesc::AMisses,
+                "3".to_owned(),
+            ),
+            ArrayDiff::new(
+                "nested.diff_array".to_owned(),
+                ArrayDiffDesc::AMisses,
+                "3".to_owned(),
             ),
         ];
 
