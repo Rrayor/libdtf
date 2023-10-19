@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use libdtf::diff_types::{
+use libdtf::json::diff_types::{
     ArrayDiff, Checker, CheckingData, Config, KeyDiff, TypeDiff, ValueDiff, WorkingContext,
     WorkingFile,
 };

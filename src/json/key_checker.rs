@@ -13,7 +13,7 @@ use std::collections::HashSet;
 
 use serde_json::Value;
 
-use crate::{
+use crate::json::{
     diff_types::{Checker, CheckingData, DiffCollection, KeyDiff},
     format_key,
 };
@@ -120,7 +120,9 @@ impl<'a> CheckingData<'a, KeyDiff> {
 mod tests {
     use serde_json::json;
 
-    use crate::diff_types::{Checker, CheckingData, Config, KeyDiff, WorkingContext, WorkingFile};
+    use crate::json::diff_types::{
+        Checker, CheckingData, Config, KeyDiff, WorkingContext, WorkingFile,
+    };
 
     const FILE_NAME_A: &str = "a.json";
     const FILE_NAME_B: &str = "b.json";

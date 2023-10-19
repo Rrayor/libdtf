@@ -1,0 +1,15 @@
+{
+    "name": "John Smith",
+    "emails": [
+        {
+            "label": "personal",
+            "email": "jsmith@something.com"
+        },
+        {
+            "label": "work",
+            "email": "jsmith@company.com"
+        }
+    ],
+    "address": "N/A",
+    "age": 50
+}

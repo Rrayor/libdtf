@@ -9,12 +9,12 @@
 ///         * `AHas` and `BMisses` type of `ArrayDiffDesc` vectors, for values, that are present in `a` but not in `b`
 ///         * `BHas` and `AMisses` type of `ArrayDiffDesc` vectors, for values, that are present in `b` but not in `a`
 ///     4. We iterate through all the collected vectors and create `ArrayDiff` objects for each of them, which we store in our `diffs` vector
-use std::{collections::HashMap, fmt::Display};
+use std::collections::HashMap;
 
-use serde_json::{json, Value};
+use serde_yaml::Value;
 
-use crate::{
-    diff_types::{ArrayDiff, ArrayDiffDesc, Checker, CheckingData, DiffCollection},
+use crate::yaml::{
+    diff_types::{ArrayDiff, ArrayDiffDesc, Checker, CheckingData, DiffCollection, Stringable},
     format_key,
 };
 
@@ -23,7 +23,11 @@ impl<'a> Checker<ArrayDiff> for CheckingData<'a, ArrayDiff> {
         if !self.working_context.config.array_same_order {
             for (a_key, a_value) in self.a.into_iter() {
                 if let Some(b_value) = self.b.get(a_key) {
-                    self.find_array_diffs_in_values(&format_key(self.key, a_key), a_value, b_value);
+                    self.find_array_diffs_in_values(
+                        &format_key(self.key, a_key.as_str().unwrap()),
+                        a_value,
+                        b_value,
+                    );
                 }
             }
         }
@@ -41,13 +45,13 @@ impl<'a> Checker<ArrayDiff> for CheckingData<'a, ArrayDiff> {
 
 impl<'a> CheckingData<'a, ArrayDiff> {
     fn find_array_diffs_in_values(&mut self, key_in: &str, a: &Value, b: &Value) {
-        if a.is_object() && b.is_object() {
+        if a.is_mapping() && b.is_mapping() {
             self.find_array_diffs_in_objects(key_in, a, b);
         }
 
-        if a.is_array() && b.is_array() {
+        if a.is_sequence() && b.is_sequence() {
             let (a_has, a_misses, b_has, b_misses) =
-                self.count_occurrences(a.as_array().unwrap(), b.as_array().unwrap());
+                self.count_occurrences(a.as_sequence().unwrap(), b.as_sequence().unwrap());
 
             let array_diff_iter = a_has
                 .iter()
@@ -61,7 +65,7 @@ impl<'a> CheckingData<'a, ArrayDiff> {
                         desc,
                         value
                             .as_str()
-                            .map_or_else(|| value.to_string(), |v| v.to_owned()),
+                            .map_or_else(|| value.as_str().unwrap().to_string(), |v| v.to_owned()),
                     )
                 });
 
@@ -69,7 +73,7 @@ impl<'a> CheckingData<'a, ArrayDiff> {
         }
     }
 
-    fn count_occurrences<T: PartialEq + Display>(
+    fn count_occurrences<T: PartialEq + Stringable>(
         &mut self,
         a: &[T],
         b: &[T],
@@ -86,7 +90,7 @@ impl<'a> CheckingData<'a, ArrayDiff> {
         (a_has, a_misses, b_has, b_misses)
     }
 
-    fn count_items<T: PartialEq + Display>(&self, items: &[T]) -> HashMap<String, i32> {
+    fn count_items<T: PartialEq + Stringable>(&self, items: &[T]) -> HashMap<String, i32> {
         let mut occurrence_counts = HashMap::new();
 
         for item in items {
@@ -108,7 +112,7 @@ impl<'a> CheckingData<'a, ArrayDiff> {
             let diff = count - count_b;
 
             for _ in 0..diff {
-                difference.push(json!(key));
+                difference.push(Value::String(key.to_owned()));
             }
         }
 
@@ -118,8 +122,8 @@ impl<'a> CheckingData<'a, ArrayDiff> {
     fn find_array_diffs_in_objects(&mut self, key_in: &str, a: &Value, b: &Value) {
         let mut array_checker = CheckingData::new(
             key_in,
-            a.as_object().unwrap(),
-            b.as_object().unwrap(),
+            a.as_mapping().unwrap(),
+            b.as_mapping().unwrap(),
             self.working_context,
         );
 
@@ -130,9 +134,9 @@ impl<'a> CheckingData<'a, ArrayDiff> {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
+    use serde_yaml::{from_str, Mapping};
 
-    use crate::diff_types::{
+    use crate::yaml::diff_types::{
         ArrayDiff, ArrayDiffDesc, Checker, Config, WorkingContext, WorkingFile,
     };
 
@@ -144,39 +148,59 @@ mod tests {
     #[test]
     fn test_find_array_diffs() {
         // arrange
-        let a = json!({
-            "no_diff_array": [
-                1, 2, 3, 4
-            ],
-            "diff_array": [
-                1, 2, 3, 4
-            ],
-            "nested": {
-                "no_diff_array": [
-                    1, 2, 3, 4
-                ],
-                "diff_array": [
-                    1, 2, 3, 4
-                ],
-            },
-        });
+        let a = from_str(
+            r"
+            'no_diff_array':
+                - 1
+                - 2
+                - 3
+                - 4
+            'diff_array':
+                - 1
+                - 2
+                - 3
+                - 4
+            'nested':
+                'no_diff_array':
+                    - 1
+                    - 2
+                    - 3
+                    - 4
+                'diff_array':
+                    - 1
+                    - 2
+                    - 3
+                    - 4
+        ",
+        )
+        .unwrap();
 
-        let b = json!({
-            "no_diff_array": [
-                1, 2, 3, 4
-            ],
-            "diff_array": [
-                1, 2, 8, 4
-            ],
-            "nested": {
-                "no_diff_array": [
-                    1, 2, 3, 4
-                ],
-                "diff_array": [
-                    1, 2, 8, 4
-                ],
-            },
-        });
+        let b = from_str(
+            r"
+            'no_diff_array':
+                - 1
+                - 2
+                - 3
+                - 4
+            'diff_array':
+                - 1
+                - 2
+                - 8
+                - 4
+            'nested':
+                'no_diff_array':
+                    - 1
+                    - 2
+                    - 3
+                    - 4
+                'diff_array':
+                    - 1
+                    - 2
+                    - 8
+                    - 4
+        ",
+        )
+        .unwrap();
 
         let expected = vec![
             ArrayDiff::new("diff_array".to_owned(), ArrayDiffDesc::AHas, "3".to_owned()),
@@ -214,12 +238,7 @@ mod tests {
         ];
 
         let working_context = create_test_working_context(false);
-        let mut array_checker = CheckingData::new(
-            "",
-            &a.as_object().unwrap(),
-            &b.as_object().unwrap(),
-            &working_context,
-        );
+        let mut array_checker = CheckingData::new("", &a, &b, &working_context);
 
         // act
         array_checker.check();
@@ -231,39 +250,65 @@ mod tests {
     #[test]
     fn test_find_array_diffs_multiple_entries_with_same_value() {
         // arrange
-        let a = json!({
-            "no_diff_array": [
-                1, 2, 3, 4,
-            ],
-            "diff_array": [
-                1, 2, 3, 4
-            ],
-            "nested": {
-                "no_diff_array": [
-                    1, 2, 3, 4
-                ],
-                "diff_array": [
-                    1, 2, 3, 4
-                ],
-            },
-        });
+        let a: Mapping = from_str(
+            r"
+            'no_diff_array':
+                - 1
+                - 2
+                - 3
+                - 4
+            'diff_array':
+                - 1
+                - 2
+                - 3
+                - 4
+            'nested':
+                'no_diff_array':
+                    - 1
+                    - 2
+                    - 3
+                    - 4
+                'diff_array':
+                    - 1
+                    - 2
+                    - 3
+                    - 4
+        ",
+        )
+        .unwrap();
 
-        let b = json!({
-            "no_diff_array": [
-                1, 2, 3, 4
-            ],
-            "diff_array": [
-                1, 1, 2, 3, 3, 3, 4,
-            ],
-            "nested": {
-                "no_diff_array": [
-                    1, 2, 3, 4
-                ],
-                "diff_array": [
-                    1, 1, 2, 3, 3, 3, 4,
-                ],
-            },
-        });
+        let b = from_str(
+            "
+            'no_diff_array':
+                - 1
+                - 2
+                - 3
+                - 4
+            'diff_array':
+                - 1
+                - 1
+                - 2
+                - 3
+                - 3
+                - 3
+                - 4
+            'nested':
+                'no_diff_array':
+                    - 1
+                    - 2
+                    - 3
+                    - 4
+                'diff_array':
+                    - 1
+                    - 1
+                    - 2
+                    - 3
+                    - 3
+                    - 3
+                    - 4
+        ",
+        )
+        .unwrap();
 
         let expected = vec![
             ArrayDiff::new("diff_array".to_owned(), ArrayDiffDesc::BHas, "1".to_owned()),
@@ -317,12 +362,7 @@ mod tests {
         ];
 
         let working_context = create_test_working_context(false);
-        let mut array_checker = CheckingData::new(
-            "",
-            &a.as_object().unwrap(),
-            &b.as_object().unwrap(),
-            &working_context,
-        );
+        let mut array_checker = CheckingData::new("", &a, &b, &working_context);
 
         // act
         array_checker.check();
