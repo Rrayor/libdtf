@@ -62,14 +62,14 @@ impl<'a> CheckingData<'a, KeyDiff> {
     }
 
     fn find_key_diffs_in_arrays(&mut self, key_in: &str, a: &Value, b: &Value) {
-        a.as_mapping()
+        a.as_sequence()
             .unwrap()
             .iter()
             .enumerate()
-            .for_each(|(i, (a_key, _))| {
+            .for_each(|(i, a_item)| {
                 self.find_key_diffs_in_values(
                     &format!("{}[{}]", key_in, i),
-                    a_key,
+                    a_item,
                     &b.as_sequence().unwrap()[i],
                 )
             });
