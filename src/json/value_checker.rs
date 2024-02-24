@@ -8,10 +8,10 @@
 ///     4. If the values of the fields aren't equal, we add the difference to our `diffs` vector.
 use serde_json::Value;
 
-use crate::json::{
-    diff_types::{Checker, CheckingData, DiffCollection, ValueDiff},
+use crate::{core::diff_types::{Checker, DiffCollection, ValueDiff}, json::{
+    diff_types::CheckingData,
     format_key,
-};
+}};
 
 impl<'a> Checker<ValueDiff> for CheckingData<'a, ValueDiff> {
     fn check(&mut self) {
@@ -82,7 +82,7 @@ impl<'a> CheckingData<'a, ValueDiff> {
 mod tests {
     use serde_json::json;
 
-    use crate::json::diff_types::{Checker, Config, ValueDiff, WorkingContext, WorkingFile};
+    use crate::core::diff_types::{Checker, Config, ValueDiff, WorkingContext, WorkingFile};
 
     use super::CheckingData;
 

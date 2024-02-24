@@ -13,10 +13,9 @@ use std::collections::HashSet;
 
 use serde_yaml::Value;
 
-use crate::yaml::{
-    diff_types::{Checker, CheckingData, DiffCollection, KeyDiff},
-    format_key,
-};
+use crate::core::diff_types::{Checker, DiffCollection, KeyDiff};
+
+use super::{diff_types::CheckingData, format_key};
 
 impl<'a> Checker<KeyDiff> for CheckingData<'a, KeyDiff> {
     fn check(&mut self) {
@@ -120,9 +119,9 @@ impl<'a> CheckingData<'a, KeyDiff> {
 mod tests {
     use serde_yaml::{from_str, Mapping};
 
-    use crate::yaml::diff_types::{
-        Checker, CheckingData, Config, KeyDiff, WorkingContext, WorkingFile,
-    };
+    use crate::{core::diff_types::{
+        Checker, Config, KeyDiff, WorkingContext, WorkingFile,
+    }, yaml::diff_types::CheckingData};
 
     const FILE_NAME_A: &str = "a.json";
     const FILE_NAME_B: &str = "b.json";

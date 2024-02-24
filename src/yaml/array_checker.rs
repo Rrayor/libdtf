@@ -13,10 +13,9 @@ use std::collections::HashMap;
 
 use serde_yaml::Value;
 
-use crate::yaml::{
-    diff_types::{ArrayDiff, ArrayDiffDesc, Checker, CheckingData, DiffCollection, Stringable},
-    format_key,
-};
+use crate::core::diff_types::{ArrayDiff, ArrayDiffDesc, Checker, DiffCollection, Stringable};
+
+use super::{diff_types::CheckingData, format_key};
 
 impl<'a> Checker<ArrayDiff> for CheckingData<'a, ArrayDiff> {
     fn check(&mut self) {
@@ -136,7 +135,7 @@ impl<'a> CheckingData<'a, ArrayDiff> {
 mod tests {
     use serde_yaml::{from_str, Mapping};
 
-    use crate::yaml::diff_types::{
+    use crate::core::diff_types::{
         ArrayDiff, ArrayDiffDesc, Checker, Config, WorkingContext, WorkingFile,
     };
 

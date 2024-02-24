@@ -13,10 +13,10 @@ use std::{collections::HashMap, fmt::Display};
 
 use serde_json::{json, Value};
 
-use crate::json::{
-    diff_types::{ArrayDiff, ArrayDiffDesc, Checker, CheckingData, DiffCollection},
+use crate::{core::diff_types::{ArrayDiff, ArrayDiffDesc, Checker, DiffCollection}, json::{
+    diff_types::CheckingData,
     format_key,
-};
+}};
 
 impl<'a> Checker<ArrayDiff> for CheckingData<'a, ArrayDiff> {
     fn check(&mut self) {
@@ -132,7 +132,7 @@ impl<'a> CheckingData<'a, ArrayDiff> {
 mod tests {
     use serde_json::json;
 
-    use crate::json::diff_types::{
+    use crate::core::diff_types::{
         ArrayDiff, ArrayDiffDesc, Checker, Config, WorkingContext, WorkingFile,
     };
 

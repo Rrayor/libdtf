@@ -8,10 +8,9 @@
 ///     4. If the types of the fields don't match, we add the difference to our `diffs` vector.
 use serde_yaml::Value;
 
-use crate::yaml::{
-    diff_types::{Checker, CheckingData, DiffCollection, TypeDiff, ValueType},
-    format_key,
-};
+use crate::core::diff_types::{Checker, DiffCollection, TypeDiff, ValueType};
+
+use super::{diff_types::CheckingData, format_key};
 
 impl<'a> Checker<TypeDiff> for CheckingData<'a, TypeDiff> {
     fn check(&mut self) {
@@ -105,7 +104,7 @@ fn get_type(value: &Value) -> ValueType {
 mod tests {
     use serde_yaml::from_str;
 
-    use crate::yaml::diff_types::{Checker, Config, TypeDiff, WorkingContext, WorkingFile};
+    use crate::core::diff_types::{Checker, Config, TypeDiff, WorkingContext, WorkingFile};
 
     use super::CheckingData;
 
