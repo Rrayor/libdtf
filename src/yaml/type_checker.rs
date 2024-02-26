@@ -8,10 +8,9 @@
 ///     4. If the types of the fields don't match, we add the difference to our `diffs` vector.
 use serde_yaml::Value;
 
-use crate::yaml::{
-    diff_types::{Checker, CheckingData, DiffCollection, TypeDiff, ValueType},
-    format_key,
-};
+use crate::core::diff_types::{Checker, DiffCollection, TypeDiff, ValueType};
+
+use super::{diff_types::CheckingData, format_key};
 
 impl<'a> Checker<TypeDiff> for CheckingData<'a, TypeDiff> {
     fn check(&mut self) {
@@ -97,8 +96,7 @@ fn get_type(value: &Value) -> ValueType {
         Value::String(_) => ValueType::String,
         Value::Sequence(_) => ValueType::Array,
         Value::Mapping(_) => ValueType::Object,
-        // TODO: may need a different type
-        Value::Tagged(_) => ValueType::Number,
+        Value::Tagged(_) => ValueType::Object,
     }
 }
 
@@ -106,7 +104,7 @@ fn get_type(value: &Value) -> ValueType {
 mod tests {
     use serde_yaml::from_str;
 
-    use crate::yaml::diff_types::{Checker, Config, TypeDiff, WorkingContext, WorkingFile};
+    use crate::core::diff_types::{Checker, Config, TypeDiff, WorkingContext, WorkingFile};
 
     use super::CheckingData;
 
@@ -200,7 +198,7 @@ mod tests {
                 - 'string2'
                 - 'string3'
                 - 'string4'
-                - 8,
+                - 8
                 - true
             'nested':
                 'a_bool_b_string': true
@@ -223,8 +221,8 @@ mod tests {
                 - 'other_string'
                 - 'other_string2'
                 - 'other_string3'
-                - 5,
-                - 1,
+                - 5
+                - 1
                 - false
             'nested':
                 'a_bool_b_string': 'a_bool_b_string'
@@ -233,8 +231,8 @@ mod tests {
                     - 'other_string'
                     - 'other_string2'
                     - 'other_string3'
-                    - false,
-                    - 2,
+                    - false
+                    - 2
                     - false
         ",
         )
@@ -282,10 +280,10 @@ mod tests {
         WorkingContext::new(working_file_a, working_file_b, config)
     }
 
-    println!("expected: {:?}", expected);
-    println!("result: {:?}", result);
-
-    fn assert_array<T: PartialEq>(expected: &Vec<T>, result: &Vec<T>) {
+    
+    fn assert_array<T: PartialEq + std::fmt::Debug>(expected: &Vec<T>, result: &Vec<T>) {
+        println!("expected: {:?}", expected);
+        println!("result: {:?}", result);
         assert_eq!(expected.len(), result.len());
         assert!(expected.into_iter().all(|item| result.contains(&item)));
     }

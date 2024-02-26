@@ -5,4 +5,44 @@ emails:
   - "label": "work"
     "email": "jsmith@company.com"
 address: "N/A"
+car:
+  make: "Toyota"
+  model: "Camry"
+  year: 2015
+  color: "blue"
+  vin: "1234567890"
+  license: "ABC123"
+  insurance:
+    company: "State Farm"
+    policy: "1234567890"
+    agent: "John Doe"
+    phone: "123-456-7890"
+  registration:
+    expires: "2020-12-31"
+    fee: 100
+    paid: true
+  maintenance:
+    last_service: "2020-01-01"
+    next_service: "2020-07-01"
+    service_interval: 6
+    service_cost: 50
+    tire_rotation: true
+    tire_rotation_interval: 6
+    tire_rotation_cost: 20
+    oil_change: true
+    oil_change_interval: 6
+    oil_change_cost: 30
+    brake_service: true
+    brake_service_interval: 12
+    brake_service_cost: 100
+    alignment: true
+    alignment_interval: 12
+    alignment_cost: 50
+    tire_replacement: true
+    tire_replacement_interval: 24
+    tire_replacement_cost: 400
+    battery_replacement: true
+    battery_replacement_interval: 48
+    battery_replacement_cost: 150
+    other: "N/A"
 age: 50

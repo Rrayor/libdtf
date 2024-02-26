@@ -1,8 +1,8 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use libdtf::json::diff_types::{
-    ArrayDiff, Checker, CheckingData, Config, KeyDiff, TypeDiff, ValueDiff, WorkingContext,
+use libdtf::{core::diff_types::{
+    ArrayDiff, Checker, Config, KeyDiff, TypeDiff, ValueDiff, WorkingContext,
     WorkingFile,
-};
+}, json::diff_types::CheckingData};
 use serde_json::json;
 
 const FILE_NAME_A: &str = "a.json";
