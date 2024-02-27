@@ -4,15 +4,9 @@ use crate::core::diff_types::{Diff, DiffCollection, Stringable, WorkingContext};
 
 impl Stringable for serde_yaml::Value {
     fn to_string(&self) -> String {
-        match &self {
+        match self {
             serde_yaml::Value::Null => "null".to_owned(),
-            serde_yaml::Value::Bool(value) => value.to_string(),
-            serde_yaml::Value::Number(value) => value.to_string(),
-            serde_yaml::Value::String(value) => value.to_string(),
-            // TODO: proper to_string() for these
-            serde_yaml::Value::Sequence(_) => "array".to_owned(),
-            serde_yaml::Value::Mapping(_) => "mapping".to_owned(),
-            serde_yaml::Value::Tagged(_) => "tagged".to_owned(),
+            value => serde_yaml::to_string(value).unwrap_or_default(),
         }
     }
 }
