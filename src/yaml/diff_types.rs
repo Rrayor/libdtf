@@ -6,7 +6,10 @@ impl Stringable for serde_yaml::Value {
     fn to_string(&self) -> String {
         match self {
             serde_yaml::Value::Null => "null".to_owned(),
-            value => serde_yaml::to_string(value).unwrap_or_default(),
+            value => serde_yaml::to_string(value)
+                .unwrap_or_default()
+                .trim()
+                .to_owned(),
         }
     }
 }
